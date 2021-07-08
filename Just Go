@@ -1,0 +1,21 @@
+// This code was setup to test the functions of the motor to understand the Minimum Voltage and the Maximum Voltages for the throttle
+// using an analog value of 160 out of 255 to test the Segway, this variable can be changed for different tests
+
+const int pwmPin = 9; // setting PWM pin 9 on Arduino
+int outputValue = 160; // Output value of 160 out of 255 analog values: change for testing
+
+void setup() {
+ 
+ Serial.begin(9600);
+
+ //Custom code: initialising the pins
+ pinMode(pwmPin, outputValue);
+
+}
+
+void loop() {
+
+ //Send voltage to arduino: this will control the throttle of the segway
+ analogWrite(pwmPin, outputValue);
+
+}
