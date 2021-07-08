@@ -1,0 +1,121 @@
+// Testing Segway function: motion relates to the intensity of the pitch
+
+#include <CurieIMU.h>
+#include <MadgwickAHRS.h>
+
+Madgwick filter;
+unsigned long microsPerReading, microsPrevious;
+float accelScale, gyroScale;
+
+const int pwmPin = 9; // PWM pin 9 on Arduino
+float maxTilt = 15.0; // maximum tilt of the board 15 degrees
+float minTilt = 0.0; // minimum tilt for one direction 0 degrees
+float maxVoltage = 200.0; // maximum analog value to the throttle
+float minVoltage = 150.0; // minimum analog value to the throttle
+
+void setup() {
+
+ Serial.begin(9600);
+ 
+ // start the IMU and filter
+CurieIMU.begin();
+ CurieIMU.setGyroRate(25);
+ CurieIMU.setAccelerometerRate(25);
+ filter.begin(25);
+ // Set the accelerometer range to 2G
+ CurieIMU.setAccelerometerRange(2);
+ // Set the gyroscope range to 250 degrees/second
+ CurieIMU.setGyroRange(250);
+ // initialize variables to pace updates to correct rate
+ microsPerReading = 10000 / 25;
+ microsPrevious = micros();
+ //Custom code
+ pinMode(pwmPin, OUTPUT);
+
+}
+
+
+void loop() {
+
+ int aix, aiy, aiz;
+ int gix, giy, giz;
+ float ax, ay, az;
+ float gx, gy, gz;
+ float roll, pitch, yaw;
+ float voltage, analogVoltage;
+ unsigned long microsNow;
+ // check if it's time to read data and update the filter
+ delay(100);
+
+ // read raw data from CurieIMU
+ CurieIMU.readMotionSensor(aix, aiy, aiz, gix, giy, giz);
+ // convert from raw data to gravity and degrees/second units
+ ax = convertRawAcceleration(aix);
+ ay = convertRawAcceleration(aiy);
+ az = convertRawAcceleration(aiz);
+ gx = convertRawGyro(gix);
+ gy = convertRawGyro(giy);
+ gz = convertRawGyro(giz);
+ // update the filter, which computes orientation
+ filter.updateIMU(gx, gy, gz, ax, ay, az);
+ 
+ // print the heading, pitch, roll and yaw
+ roll = filter.getRoll();
+ pitch = filter.getPitch();
+ yaw = filter.getYaw();
+ Serial.print("Orientation: ");
+ Serial.print("pitch:");
+ Serial.print(" ");
+ Serial.print(pitch);
+ //Serial.print(", ");
+ //Serial.println(roll);
+ //Pitch is the only one we need to apply voltage to the throttle
+ analogVoltage = round(calculateVoltage(pitch * (-1.0)));
+
+ Serial.print("Analog value: ");
+ Serial.println(analogVoltage);
+ //Send voltage to arduino
+ analogWrite(pwmPin, analogVoltage);
+
+}
+
+
+float calculateVoltage(float pitchVal) { 
+
+ float v = 0.0; // Analog value
+
+ if (pitchVal < minTilt) { // pitch less than min tilt 0 volatge is sent
+ v = 0.0; // Analog value
+ }
+ else if(pitchVal > maxTilt) { // pitch greater than max tilt max volatge is sent
+ v = maxVoltage; // Analog value
+ }
+ else { // accelerating function to increase the analog value with tilt until max
+ v = (((pitchVal - minTilt) * (maxVoltage - minVoltage)) / (maxTilt - minTilt)) + minVoltage;
+ // Test >> [v = (((pitchVal - minTilt) * (maxVoltage - minVoltage)) / ((maxTilt - minTilt))**2) + minVoltage;] 
+ }
+ return v; // return the voltage to PWM pin 9 and wheel moves accordinly
+}
+
+
+float convertRawAcceleration(int aRaw) {
+ // since we are using 2G range
+ // -2g maps to a raw value of -32768
+ // +2g maps to a raw value of 32767
+
+ float a = (aRaw * 2.0) / 32768.0;
+ return a;
+ 
+}
+
+
+float convertRawGyro(int gRaw) {
+
+ // since we are using 250 degrees/seconds range
+ // -250 maps to a raw value of -32768
+ // +250 maps to a raw value of 32767
+
+ float g = (gRaw * 250.0) / 32768.0;
+ return g;
+ 
+}
