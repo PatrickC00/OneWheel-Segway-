@@ -1,1 +1,3 @@
 # OneWheel-Segway-
+
+This is a project I completed during my final year as a level 7 mechanical engineering student. I have a completed code without a full testing, The reason for this was the motor and controller chosen for the project were not compatible for the build. There is basic representation of how motion interacts with a 3D using Processing included in the build, schematics for the controller and motor and also the code which runs the motor or runs the motor with respect to motion. Please leave some inputs on the project and if there are any parts that you fell may bring the project to completion that would be greatly appreciated.
