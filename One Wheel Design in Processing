@@ -1,0 +1,121 @@
+// Processing is a 3D visual for taking information and building using their software, to
+// assemble my project here it was illustrated that the movement of the gyroscope and
+// accelerometer can produce affective results, this is very helpful for verifying values and
+// also it is and interesting way to see my project in motion.
+
+import processing.serial.*;
+Serial myPort; // Arduino connection
+float yaw = 0.0;
+float pitch = 0.0;
+float roll = 0.0;
+
+void setup()
+{
+ size(600, 500, P3D);
+ // if you have only ONE serial port active
+myPort = new Serial(this, "COM3", 9600); // if you have only ONE serial port active
+ // if you know the serial port name
+ // // Windows
+ //myPort = new Serial(this, "/dev/ttyACM0", 9600); // Linux
+ //myPort = new Serial(this, "/dev/cu.usbmodem1217321", 9600); // Mac
+ textSize(16); // set text size
+ textMode(SHAPE); // set text mode to shape
+}
+
+void draw()
+{
+ serialEvent(); // read and parse incoming serial message
+ background(255); // set background to white
+ lights();
+ translate(width/2, height/2); // set position to centre
+ pushMatrix(); // begin object
+ float c1 = cos(radians(roll));
+ float s1 = sin(radians(roll));
+ float c2 = cos(radians(pitch));
+ float s2 = sin(radians(pitch));
+ float c3 = cos(radians(yaw));
+ float s3 = sin(radians(yaw));
+ applyMatrix( c2*c3, s1*s3+c1*c3*s2, c3*s1*s2-c1*s3, 0,
+ -s2, c1*c2, c2*s1, 0,
+ c2*s3, c1*s2*s3-c3*s1, c1*c3+s1*s2*s3, 0,
+ 0, 0, 0, 1);
+ drawOneWheel();
+ popMatrix(); // end of object
+ // Print values to console
+ print(roll);
+ print("\t");
+ print(pitch);
+ print("\t");
+ print(yaw);
+ println();
+}
+
+void serialEvent()
+{
+ int newLine = 13; // new line character in ASCII
+ String message;
+ do {
+ message = myPort.readStringUntil(newLine); // read from port until new line
+ if (message != null) {
+ String[] list = split(trim(message), " ");
+ if (list.length >= 4 && list[0].equals("Orientation:")) {
+ //yaw = float(list[1]); // convert to float yaw; Removed to see roll and pitch only
+ pitch = float(list[2]); // convert to float pitch
+ roll = float(list[3]); // convert to float roll
+ }
+ }
+ } while (message != null);
+}
+
+void drawOneWheel()
+{
+ /* function contains shape(s) that are rotated with the IMU */
+ stroke(0, 0, 0); // set outline colour to R,G,B: cylinders Black
+ fill(0, 0, 0); // set fill colour to Black
+ drawCylinder(90, 145, 90); //Draw the wheel at positions
+ drawCylinder(90, 10, 240); //Draw the bolt thing
+
+ fill(206, 149, 57); // cubes set fill : Brown(wood)
+ translate(275, 0, 0);
+ box(230, 90, 240); // draw end cubes
+
+ translate(-550, 0, 0);
+ box(230, 90, 240); // draw end cubes
+
+ translate(275, 0, 95);
+ box(320, 90, 50); // draw connector cubes
+
+ translate(0, 0, -190);
+ box(320, 90, 50); // draw connector cubes
+}
+void drawCylinder(int sides, float r, float h)
+{
+ float angle = 360 / sides;
+ float halfHeight = h / 2;
+ // draw top of the tube
+ beginShape();
+ for (int i = 0; i < sides; i++) {
+ float x = cos( radians( i * angle ) ) * r;
+ float y = sin( radians( i * angle ) ) * r;
+ vertex( x, y, -halfHeight);
+ }
+ endShape(CLOSE);
+ // draw bottom of the tube
+ beginShape();
+ for (int i = 0; i < sides; i++) {
+ float x = cos( radians( i * angle ) ) * r;
+ float y = sin( radians( i * angle ) ) * r;
+ vertex( x, y, halfHeight);
+ }
+ endShape(CLOSE);
+
+ // draw sides
+ beginShape(TRIANGLE_STRIP);
+ for (int i = 0; i < sides + 1; i++) {
+ float x = cos( radians( i * angle ) ) * r;
+ float y = sin( radians( i * angle ) ) * r;
+ vertex( x, y, halfHeight);
+ vertex( x, y, -halfHeight);
+ }
+ endShape(CLOSE);
+}
