@@ -1,7 +1,9 @@
 // Processing is a 3D visual for taking information and building using their software, to
 // assemble my project here it was illustrated that the movement of the gyroscope and
 // accelerometer can produce affective results, this is very helpful for verifying values and
-// also it is and interesting way to see my project in motion.
+// also it is and interesting way to see my project in motion. 
+// Go to this video link for more information, my design is based off of this code. https://www.youtube.com/watch?v=FlAVVkNP56E
+
 
 import processing.serial.*;
 Serial myPort; // Arduino connection
